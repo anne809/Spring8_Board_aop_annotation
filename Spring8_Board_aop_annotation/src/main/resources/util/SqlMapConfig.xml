@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+<!--  상단 부분 맞춰줘야합니다~ -->
+
+
+<!--  구조 셋팅하는거에요. 여기서 분업이 이루어집니다. -->
+
+<configuration>
+	<typeAliases> <!--  comment.xml과 연결되어있습니다. -->
+		<typeAlias alias="member" type="com.naver.myhome4.domain.Member"/>
+		<typeAlias alias="board" type="com.naver.myhome4.domain.Board"/>
+		<typeAlias alias="C" type="com.naver.myhome4.domain.Comment"/> 
+	</typeAliases>
+
+	<mappers>
+		<mapper resource = "sql/member.xml"/>
+		<mapper resource = "sql/board.xml"/>
+		<mapper resource = "sql/comment.xml"/>
+	</mappers>
+
+</configuration>

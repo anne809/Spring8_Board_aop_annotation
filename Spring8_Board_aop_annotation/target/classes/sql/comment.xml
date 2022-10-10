@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--  SQL 맵퍼 파일은 xml이기 때문에 제일 먼저 xml 선언이 옵니다. -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+
+<mapper namespace="Comments">
+
+	<!--  
+		*** 순서 ***
+	
+	1) interface CommentService 
+		 public int getListCount(int num); // CommentServiceImpl 만들러 감니다...
+	
+	
+	2) CommentServiceImpl
+		public int getListCount(int board_num) {
+			return dao.getListCount(board_num); // CommentDAO에서 또 생성하러 갑니다 
+		}
+	
+	3) CommentDAO에서							 //comment.xml 만들러 갑니다..
+		public int getListCount(int board_num) {  //두번쨰 인자값은 파라미터입니다. xml에서 parameterType이 됩니다.
+		return sqlSession.selectOne("Comments.count",board_num); //count가 id값이 되고, parameterType이 두번째 인자값입니다.
+		}
+		
+	 -->
+	<select id="count" resultType="int" parameterType="int">
+		select count(*)
+		from comments where board_num = #{board_num}
+	</select>
+
+
+	<!-- 댓글 리스트  -->
+	<select id="getList" resultType="C" parameterType="map">
+		select * from
+		( select rownum rnum,num, id, content, reg_date
+		  from
+				(select num, id, content, reg_date
+						from comments where board_num = #{board_num}
+						order by reg_date desc
+				) 
+			)
+			where rnum between #{start} and #{end} 
+			
+				 <!--  쿼리에서 이름 겹칠까봐 별칭 정했떤거...  rownum rnum 이거야.. -->
+			 	 <!--  CommentServiceImpl 에서 getCommentList부분이 적용됩니다. -->
+				 <!--  boardlist에 있는 것과 같습니다. 윗부분은 같고 이부분만 신경써주시면 됩니다. -->
+				 <!--  
+				(select num, id, content, reg_date
+						from comments where board_num = #{board_num}
+						order by reg_date desc
+				)  이부분 가져가 쓰시면 됩니다 어느순간 이해가 되실거에요ㅠㅠ -->
+
+		<!--  between 쓰셔도 됩니다. -->
+	</select>
+	
+	
+	<!--  댓글 등록하기  -->
+	<insert id="insert" parameterType="C">
+   	   insert into comments
+    	  values(com_seq.nextval, #{id}, #{content}, sysdate, #{board_num})
+   </insert>
+
+
+	<!--  댓글 삭제  -->
+	<delete id="delete" parameterType="int">
+		delete comments where num = #{num}	
+	</delete>
+
+
+	<!--  댓글 수정  -->
+	<update id="update" parameterType = "C">
+		update comments
+		set content = #{content}
+		where num = #{num}	
+	</update> <!-- 삭제하는 부분은 번호만 알면 되므로 num -->
+	<!--  작성후 view3.js로 이동합니다. -->
+
+
+
+
+</mapper>

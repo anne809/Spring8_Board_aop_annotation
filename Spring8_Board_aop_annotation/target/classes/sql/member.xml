@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- SQL 맵퍼 파일은 xml이기 때문에 제일 먼저 xml 선언이 옵니다. -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+
+<mapper namespace="Members"> <!--  퀴리문 작성하는 곳이랄까,, 큭.... -->
+
+
+	<!--  id 체크  -->
+	<select id="idcheck" resultType="member" parameterType="String">
+		select * from member where id = #{id}
+	</select>
+	
+	
+	
+	 <!-- 회원 가입 -->
+    <insert id="insert" parameterType="member">
+   	  insert into member
+      values
+      	(#{id}, #{password}, #{name}, #{age}, #{gender}, #{email})   
+    </insert>
+    
+    
+    <!-- getList-->
+    <select id="getList" resultType="member">
+    	select * from member    	
+    </select>
+    
+    
+    <!--  삭제    -->
+    <delete id="delete" parameterType="String">
+    	delete from member where id = #{id}
+    </delete>
+    
+    
+    <!--  정보 업데이트 --> 
+    <update id="update" parameterType="member">
+    	update member
+    	set	 name = #{name}, age = #{age},
+    	 	 gender = #{gender}, email=#{email}
+    	where id=#{id}
+ 	</update>
+ 	
+ 	
+ 
+   <select id="searchcount" parameterType="map" resultType="int">
+      select count(*) from member where id != 'admin'
+      <if test="search_field!=null">
+      and
+      <choose>
+         <when test="search_field=='id'">id</when>
+         <when test="search_field=='name'">name</when>
+         <when test="search_field=='age'">age</when>
+         <when test="search_field=='gender'">gender</when>
+      </choose>
+      like #{search_word}
+      </if>
+   </select>
+   
+   <select id="getSearchList" parameterType="map" resultType="member">
+      select *
+      from ( select rownum rnum, b.*
+            from (select * from member where id != 'admin'
+                  <if test="search_field!=null">
+                     and
+                     <choose>
+                        <when test="search_field=='id'">id</when>
+                        <when test="search_field=='name'">name</when>
+                        <when test="search_field=='age'">age</when>
+                        <when test="search_field=='gender'">gender</when>
+                     </choose>
+                        like #{search_word}
+                  </if>
+               order by id
+                  )b
+            )
+      where rnum &gt;= #{start} and rnum &lt; = #{end}
+   </select>
+</mapper>

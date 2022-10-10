@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.1.xsd
+		http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing 
+		infrastructure -->
+
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<annotation-driven />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving 
+		up static resources in the ${webappRoot}/resources directory -->
+	<resources mapping="/resources/**" location="/resources/" />
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources 
+		in the /WEB-INF/views directory -->
+	<beans:bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+
+	<context:component-scan
+		base-package="com.naver.myhome4" />
+		
+		
+	<!--  aop관련 annotation들을 인식하고 처리해 줍니다. -->
+	<aop:aspectj-autoproxy/>
+	
+	
+	
+	<!--  트랜잭션 적용 Advice -->
+	<!--  콘솔에 DEBUG: org.springframework.jdbc.datasource.DataSourceTransactionManager - Rolling back 떠야합니다.. -->
+	
+	<!--  root-context.xml	에서 작성한 빈입니다. 
+		<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="datasource" ref="dataSource"/>
+		</bean>
+		
+		1. <tx:advice> : 트랜잭션을 적용할 떄 사용될 Advisor를 생성합니다.
+		2. id는 생성될 트랜잭션 Advisor의 식별값입니다.
+		3. transaction-manager 속성에는 DataSourceTransactionManager의 빈을 설정합니다.
+		4. <tx:attributes>태그의 자식 <tx:method>를 이용해서 트랜잭션을 적용할 메서드를 설정합니다.
+	 -->
+	 <tx:advice id="txAdvice" transaction-manager="transactionManager">
+	 	<tx:attributes>
+	 		<tx:method name="*"/>
+	 	</tx:attributes>
+	 	</tx:advice>
+	 	
+	 	<aop:config>
+	 		<aop:pointcut expression="excution(* com.naver.myhome4..*Impl.*(..))" id="allpointcut"/>
+	 		<aop:advisor advice-ref="txAdvice" pointcut-ref="allPointcut"/>
+	 		</aop:config>
+	 		
+	<!--       트랜잭션 적용 끝        -->
+
+
+
+
+	<!--                      Advice 실습1                   -->
+	
+	<!-- aop에서 적용할것을 만들어 놓고 impl이 많은데 어떤 패키지의 어떤 메소드를 중간에 (before) 실행전에 적용할거니? 
+		라는 의미입니다. -->
+	<beans:bean id="beforlog"
+		class="com.naver.myhome4.common.BeforeAdvice" />
+
+	<aop:config>
+		<aop:pointcut id="allPointcut"
+			expression="execution(* com.naver.myhome4..*Impl.*(..))" />
+
+		<aop:pointcut id="getPointcut"
+			expression="execution(* com.naver.myhome4..*Impl.get*(..))" />
+
+		<!-- 어드바이스할것과 일치 -->
+		<aop:aspect ref="beforlog">
+			<aop:before pointcut-ref="allPointcut" method="beforeLog" />
+
+		</aop:aspect>
+	</aop:config>
+
+	<!-- 실습 2. <aop:before>를 <aop:after>로 변경해보세요 -->
+ 
+	<beans:bean id="after"
+		class="com.naver.myhome4.common.AfterAdvice" />
+	<aop:config>
+		<aop:pointcut id="getPointcut"
+			expression="execution(* com.naver.myhome4..*Impl.get*(..))" />
+		<aop:aspect ref="after">
+			<aop:after pointcut-ref="getPointcut" method="afterLog" />
+		</aop:aspect>
+	</aop:config>
+
+	<!-- 실습 3. around -->
+	<beans:bean id="around"
+		class="com.naver.myhome4.common.AroundAdvice" />
+	<aop:config>
+		<aop:pointcut id="getPointcut"
+			expression="execution(* com.naver.myhome4..*Impl.get*(..))" />
+		<aop:aspect ref="around">
+			<aop:around pointcut-ref="getPointcut" method="aroundLog" />
+		</aop:aspect>
+	</aop:config>
+	
+	
+	
+	<!--  public void afterreturningLog(Object obj){
+		매개변수로 사용하는 obj가 returning="obj" 입니다. returning="obj1"로 작성하면 아래와 같은 오류 발생합니다. 
+		Returning argument name 'obj1' was not bound in advice arguments  -->
+		
+	<beans:bean id="afterreturn" class="com.naver.myhome4.common.AfterReturningAdvice" />
+	
+	<aop:config>
+		<aop:pointcut id="getPointcut"
+					expression="execution(* com.naver.myhome4..*Impl.get*(..))" />
+		
+		<aop:aspect ref="afterreturn">
+			<aop:after-returning pointcut-ref="getPointcut" method="afterReturningLog" returning="obj" />
+		
+		</aop:aspect>
+	</aop:config>
+	
+	
+	
+	
+	<!--  AfterThrowingAdvice 예외처리 -->
+	<beans:bean id="afterthrow" class="com.naver.myhome4.common.AfterThrowingAdvice" />
+	
+	<aop:config>
+		<aop:pointcut id="getPointcut"
+					expression="execution(* com.naver.myhome4..*Impl.get*(..))" />
+		
+		<aop:aspect ref="afterthrow">
+			<aop:after-throwing pointcut-ref="getPointcut" method="afterThrowingLog" throwing="exp"/>
+		
+		</aop:aspect>
+	</aop:config>
+		
+		
+		
+		
+	<!--                   Advice            실습끝 -->
+	
+	
+	
+
+	<!-- 프로퍼티 파일을 이용해서값을 주입하는 방법 1. context 네임스페이스의 property-placeholder 태그를 
+		추가하고 앞에서 만든 프로퍼티 파일의 위치를 지정합니다. 2. Controller에서 @value를 이용해서 값을 가져옵니다. @value 
+		애노테이션의 주요 용도는 자바코드 외부의 리소스나 환경정보에 담긴 값을 사용하도록 지정해주는데 있습니다. -->
+	<context:property-placeholder
+		location="classpath:pro/savefolder.properties" />
+
+
+	<!-- 주기적인 작업이 있을땐 @Scheduled 애노테이션을 사용하면 쉽게 적용할 수 있습니다. @Scheduled(fixedDelay=1000) -->
+	<task:annotation-driven />
+
+	<!-- 비밀번호 암호화 -->
+	<beans:bean id="bcryptPasswordEncoder"
+		class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+
+</beans:beans>
